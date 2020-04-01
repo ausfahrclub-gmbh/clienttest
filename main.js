@@ -1,5 +1,7 @@
 const electron = require('electron');
 const url = require('url');
+const { autoUpdater } = require('electron-updater');
+const isDev = require('electron-is-dev');
 const path = require('path');
 
 const {app, BrowserWindow, globalShortcut} = electron;
@@ -9,11 +11,49 @@ const {app, BrowserWindow, globalShortcut} = electron;
 //     electron: path.join(__dirname, 'node_modules', '.bin', 'electron')
 // });
 
+// Setup logger
+autoUpdater.logger = require('electron-log');
+autoUpdater.logger.transports.file.level = 'info';
+
+// Setup updater events
+autoUpdater.on('checking-for-update', () => {
+  console.log('Checking for updates...');
+});
+
+autoUpdater.on('update-available', (info) => {
+  console.log('Update available');
+  console.log('Version', info.version);
+  console.log('Release date', info.releaseDate);
+});
+
+autoUpdater.on('update-not-available', () => {
+  console.log('Update not available');
+});
+
+autoUpdater.on('download-progress', (progress) => {
+  console.log(`Progress ${Math.floor(progress.percent)}`);
+});
+
+autoUpdater.on('update-downloaded', (info) => {
+  console.log('Update downloaded');
+  autoUpdater.quitAndInstall();
+});
+
+autoUpdater.on('error', (error) => {
+  console.error(error);
+});
+
 
 let mainWindow;
 
 //App ready
 app.on('ready', function(){
+
+    // Trigger update check
+    if (!isDev) {
+        autoUpdater.checkForUpdates();
+    }
+
 
     //Create new window
     mainWindow = new BrowserWindow({
